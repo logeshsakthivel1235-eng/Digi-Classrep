@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#16241D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ECE-B Register">
+<title>ECE-B Register</title>
+<style>
+  :root{
+    --bg: #F1F4EE;
+    --ink: #16241D;
+    --ink-soft: #55655A;
+    --surface: #FBFCF9;
+    --rule: #D7DED2;
+    --copper: #B5651D;
+    --copper-dark: #8C4E16;
+    --copper-bg: #F3E4D3;
+    --done: #2F7A4B;
+    --done-bg: #E4F0E7;
+    --pending: #C1432B;
+    --pending-bg: #F7E6E1;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wrap{ max-width: 560px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  header.title-block{
+    position: relative;
+    padding-bottom: 18px;
+    margin-bottom: 20px;
+    border-bottom: 2px dashed var(--copper);
+  }
+  header.title-block::before, header.title-block::after{
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    width: 8px; height: 8px;
+    background: var(--copper);
+  }
+  header.title-block::before{ left: 0; }
+  header.title-block::after{ right: 0; }
+  .title-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  header.title-block h1{
+    font-weight: 800;
+    font-size: 25px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  header.title-block p{ margin: 0; color: var(--ink-soft); font-size: 13.5px; }
+  .btn-manage{
+    background: var(--surface);
+    color: var(--ink);
+    border: 1.5px solid var(--rule) !important;
+    font-size: 13px;
+    padding: 8px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-manage:active{ background: var(--rule); }
+
+  .task-bar{ display:flex; gap:8px; align-items:center; margin-bottom: 10px; }
+  select#taskSelect{
+    flex: 1;
+    font-size: 15px;
+    padding: 9px 10px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  button{ cursor: pointer; border: none; border-radius: 4px; font-family: inherit; }
+  .btn-new{
+    background: var(--ink); color: var(--surface);
+    font-size: 14px; padding: 9px 14px; white-space: nowrap;
+  }
+  .btn-new:active{ opacity: 0.8; }
+
+  .btn-pdf{
+    background: var(--surface); color: var(--ink);
+    border: 1.5px solid var(--ink) !important;
+    font-size: 13.5px; font-weight: 600;
+    padding: 10px 12px; width: 100%; margin-bottom: 8px;
+  }
+  .btn-pdf:active{ background: var(--rule); }
+  .btn-pdf.formal{
+    border-color: var(--copper) !important;
+    color: var(--copper-dark);
+  }
+  .pdf-hint{ font-size: 11.5px; color: var(--ink-soft); margin: -4px 0 16px; text-align:center; }
+
+  .print-report{ display:none; }
+  @media print{
+    body *{ visibility: hidden; }
+    .print-report, .print-report *{ visibility: visible; }
+    .print-report{ display:block; position:absolute; top:0; left:0; width:100%; padding: 10mm 14mm; color:#000; }
+    .print-report h1{ font-size: 20px; margin: 0 0 4px; }
+    .print-report .meta{ font-size: 11px; color: #333; margin: 0 0 14px; border-bottom: 1.5px solid #000; padding-bottom: 10px; }
+    .print-report h2{ font-size: 13px; margin: 16px 0 6px; border-bottom: 1px solid #999; padding-bottom: 3px; }
+    .print-report .prow{ display:flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 0.5px solid #ddd; }
+    .print-report .prow .padmno{ font-family: monospace; color: #555; margin-right: 14px; }
+    .print-report .sig-row{ display:flex; gap: 30px; margin-top: 50px; }
+    .print-report .sig-block{ flex:1; }
+    .print-report .sig-line{ border-top: 1px solid #000; margin-top: 40px; padding-top: 6px; font-size: 11px; }
+    .print-report .sig-role{ font-size: 10px; color: #555; }
+  }
+
+  .stat-row{ display:flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .stat{ font-size: 13px; padding: 5px 10px; border-radius: 999px; font-weight: 600; }
+  .stat.done{ background: var(--done-bg); color: var(--done); }
+  .stat.pending{ background: var(--pending-bg); color: var(--pending); }
+  .stat.total{ background: var(--copper-bg); color: var(--copper-dark); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  .tools-row{ display:flex; gap: 8px; margin-bottom: 16px; align-items:center; }
+  input#search{
+    flex:1; padding: 9px 10px; border: 1px solid var(--rule); border-radius: 4px;
+    font-size: 14px; background: var(--surface); color: var(--ink); font-family: inherit;
+  }
+  label.toggle-pending{ font-size: 13px; color: var(--ink-soft); display:flex; align-items:center; gap: 5px; white-space:nowrap; }
+
+  .register{ border-top: 1px solid var(--rule); }
+  .row{ display:flex; align-items:center; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--rule); }
+  .row.is-done{ background: linear-gradient(to right, var(--done-bg), transparent 45%); }
+
+  .led{
+    width: 20px; height: 20px; flex-shrink:0;
+    border: 2px solid var(--ink-soft);
+    border-radius: 50%;
+    background: var(--surface);
+  }
+  .row.is-done .led{
+    background: var(--done);
+    border-color: var(--done);
+    box-shadow: 0 0 0 4px var(--done-bg);
+  }
+
+  .row-info{ flex: 1; min-width:0; }
+  .row-name{ font-size: 15px; font-weight: 600; line-height: 1.25; }
+  .row-admno{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; }
+
+  .amount-input{
+    width: 70px; padding: 6px 7px; border: 1px solid var(--rule); border-radius: 4px;
+    font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-align: right;
+    background: var(--surface); color: var(--ink);
+  }
+  .amount-input:disabled{ opacity: 0.35; }
+
+  .footer-actions{ display:flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+  .link-btn{ background: none; color: var(--ink-soft); font-size: 13px; padding: 6px 4px; text-decoration: underline; }
+  .link-btn.danger{ color: var(--pending); }
+
+  .empty-state{ text-align:center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state .icon{ font-size: 30px; margin-bottom: 8px; }
+  .empty-state h2{ font-weight:800; font-size:20px; color: var(--ink); margin: 0 0 6px; }
+  .empty-state p{ font-size: 14px; margin: 0 0 18px; }
+
+  .modal-backdrop{ position: fixed; inset: 0; background: rgba(22,36,29,0.45); display:flex; align-items:flex-end; justify-content:center; z-index: 50; }
+  .modal{ background: var(--surface); width: 100%; max-width: 560px; max-height: 88vh; overflow-y:auto; border-radius: 16px 16px 0 0; padding: 22px 20px 26px; }
+  .modal h3{ font-weight:800; font-size: 19px; margin: 0 0 14px; }
+  .modal label{ display:block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; }
+  .modal input[type=text], .modal input[type=number]{
+    width: 100%; padding: 10px; border: 1px solid var(--rule); border-radius: 6px;
+    font-size: 15px; margin-bottom: 14px; font-family: inherit;
+  }
+  .modal .checkbox-row{ display:flex; align-items:center; gap:8px; margin-bottom: 16px; font-size: 14px; }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-actions button{ flex:1; padding: 11px; font-size: 14px; font-weight: 600; }
+  .btn-cancel{ background: var(--bg); color: var(--ink-soft); border: 1px solid var(--rule) !important; }
+  .btn-confirm{ background: var(--ink); color: var(--surface); }
+
+  .roster-add-row{ display:flex; gap:8px; margin-bottom: 6px; }
+  .roster-add-row input{ margin-bottom: 0 !important; }
+  .roster-add-row input.admno-field{ width: 120px; flex-shrink:0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+  .btn-add-student{ background: var(--copper); color: #fff; font-size: 13px; padding: 0 14px; flex-shrink:0; }
+  .roster-hint{ font-size: 12px; color: var(--ink-soft); margin: 0 0 16px; }
+
+  .roster-list{ border-top: 1px solid var(--rule); margin-top: 14px; }
+  .roster-row{ display:flex; align-items:center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+  .roster-row .rr-info{ flex:1; min-width:0; }
+  .roster-row .rr-name{ font-size: 14px; font-weight: 600; }
+  .roster-row .rr-admno{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--ink-soft); }
+  .icon-btn{
+    background: var(--bg); width: 30px; height: 30px; border-radius: 6px;
+    display:flex; align-items:center; justify-content:center; font-size: 14px; flex-shrink:0;
+  }
+  .icon-btn.danger{ color: var(--pending); }
+  .roster-edit-row{ display:flex; gap: 6px; flex: 1; align-items:center; }
+  .roster-edit-row input{ margin-bottom: 0 !important; padding: 6px 8px; font-size: 13px; }
+  .roster-edit-row input.admno-field{ width: 100px; flex-shrink:0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  .toast{
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--surface); padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; opacity: 0; pointer-events:none; transition: opacity 0.25s ease; z-index: 60;
+    max-width: 85vw; text-align:center;
+  }
+  .toast.show{ opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="title-block">
+    <div class="title-row">
+      <div>
+        <h1>ECE-B Register</h1>
+        <p id="subtitle">39 students</p>
+      </div>
+      <button class="btn-manage" id="manageBtn">⚙ Manage students</button>
+    </div>
+  </header>
+  <div id="app">
+    <div class="empty-state"><p>Loading…</p></div>
+  </div>
+</div>
+
+<div class="print-report" id="printReport"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_ROSTER = [
+  ["26ECEBE008","AARYA"],["26ECEBE232","AKSHAYAVELAN N"],["26ECEBE290","BHUPESH N"],
+  ["26ECEBE251","BOOMIKA T"],["26ECEBE142","DEEPAK P"],
+  ["26ECEBE088","DEEPIKA A"],["26ECEBE190","DHARMAMUKUNTHAN J"],["26ECEBE221","DHIVAKAR G"],
+  ["26ECEBE238","GAYATHRI K"],["26ECEBE278","GOKULA KANNAN T"],["26ECEBE242","HARISH T"],
+  ["26ECEBE022","HEMANTH VIGNESH K"],["26ECEBE260","KABISH P"],["26ECEBE135","KARTHIKEYAN J"],["26ECEBE165","KATHIRAVAN T"],
+  ["26ECEBE258","KAVIKKUMARAN S"],["26ECEBE158","LOGESH S"],["26ECEBE027","MADESHWARAN SHUBHASHRI"],
+  ["26ECEBE153","NANDIKA D"],["26ECEBE203","NAVEENVIJAY K S"],["26ECEBE200","NISHAL G"],
+  ["26ECEBE253","NIVELAN J"],["26ECEBE156","RAHUL M S"],
+  ["26ECEBE081","RAKSHANA RIDDHI K K"],["26ECEBE168","SAATHMIKA M"],
+  ["26ECEBE279","SAKTHI GANESH S"],["26ECEBE297","SAMEEHA THASNIM A R"],["26ECEBE136","SANJAY P"],
+  ["26ECEBE266","SHAM MESHAK M"],["26ECEBE067","SHARANISHVA U D"],["26ECEBE119","SUDARSHANAN S"],
+  ["26ECEBE283","SUDESH S"],["26ECEBE071","TAMILKUMARAN K"],["26ECEBE159","THAMARAI K"],
+  ["26ECEBE176","VANITHA K"],["26ECEBE201","YOGESH C"],["26ECEBE314","DEVAPRIYAN"],
+  ["26ECEBE318","DHANUSH KUMAR"],["26ECEBE309","PREETHISSARAN"]
+].map(([admno,name]) => ({admno, name}));
+
+const TASKS_KEY = 'ece-b-tasks';
+const ACTIVE_KEY = 'ece-b-active-task';
+const ROSTER_KEY = 'ece-b-roster';
+
+let ROSTER = [];
+let tasks = [];
+let activeTaskId = null;
+let showPendingOnly = false;
+let searchTerm = '';
+
+const app = document.getElementById('app');
+const subtitle = document.getElementById('subtitle');
+
+function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(ROSTER_KEY);
+    ROSTER = raw ? JSON.parse(raw) : DEFAULT_ROSTER.slice();
+  }catch(e){ ROSTER = DEFAULT_ROSTER.slice(); }
+  try{
+    const raw = localStorage.getItem(TASKS_KEY);
+    tasks = raw ? JSON.parse(raw) : [];
+  }catch(e){ tasks = []; }
+  try{
+    activeTaskId = localStorage.getItem(ACTIVE_KEY) || null;
+  }catch(e){ activeTaskId = null; }
+  if(!tasks.find(t => t.id === activeTaskId)){
+    activeTaskId = tasks.length ? tasks[0].id : null;
+  }
+  render();
+}
+
+function saveRoster(){
+  try{ localStorage.setItem(ROSTER_KEY, JSON.stringify(ROSTER)); }
+  catch(e){ showToast('Could not save roster changes'); }
+}
+function saveTasks(){
+  try{ localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); }
+  catch(e){ showToast('Could not save — device storage may be full'); }
+}
+function saveActive(){
+  try{ localStorage.setItem(ACTIVE_KEY, activeTaskId || ''); }
+  catch(e){}
+}
+
+function getActiveTask(){ return tasks.find(t => t.id === activeTaskId); }
+
+function render(){
+  const task = getActiveTask();
+  subtitle.textContent = `${ROSTER.length} students`;
+
+  if(!task){
+    app.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <h2>No task yet</h2>
+        <p>Create one to start checking off students — fee collection,<br>form submission, event money, anything.</p>
+        <button class="btn-new" onclick="openNewTaskModal()">+ New task</button>
+      </div>`;
+    return;
+  }
+
+  const doneCount = ROSTER.filter(s => task.entries[s.admno]?.done).length;
+  const pendingCount = ROSTER.length - doneCount;
+  const totalCollected = ROSTER.reduce((sum, s) => {
+    const e = task.entries[s.admno];
+    const amt = e?.done ? parseFloat(e.amount) : NaN;
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+
+  let list = ROSTER;
+  if(searchTerm){
+    const q = searchTerm.toLowerCase();
+    list = list.filter(s => s.name.toLowerCase().includes(q) || s.admno.toLowerCase().includes(q));
+  }
+  if(showPendingOnly){
+    list = list.filter(s => !task.entries[s.admno]?.done);
+  }
+
+  app.innerHTML = `
+    <div class="task-bar">
+      <select id="taskSelect">
+        ${tasks.map(t => `<option value="${t.id}" ${t.id===task.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('')}
+      </select>
+      <button class="btn-new" id="newTaskBtn">+ New task</button>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat done">${doneCount} done</span>
+      <span class="stat pending">${pendingCount} pending</span>
+      ${task.trackAmount ? `<span class="stat total">₹${totalCollected.toLocaleString('en-IN')} collected</span>` : ''}
+    </div>
+
+    <button class="btn-pdf" id="pdfBtn">🖨️ Save report as PDF</button>
+    <button class="btn-pdf formal" id="formalPdfBtn">📄 Formal report (with signatures)</button>
+    <p class="pdf-hint">Opens your phone's print screen — choose "Save as PDF" there</p>
+
+    <div class="tools-row">
+      <input type="text" id="search" placeholder="Find a name or admission no." value="${escapeAttr(searchTerm)}">
+      <label class="toggle-pending">
+        <input type="checkbox" id="pendingToggle" ${showPendingOnly?'checked':''}>
+        Pending only
+      </label>
+    </div>
+
+    <div class="register">
+      ${list.map(s => rowHtml(s, task)).join('') || '<p style="color:var(--ink-soft); font-size:14px; padding:16px 4px;">No matches.</p>'}
+    </div>
+
+    <div class="footer-actions">
+      <button class="link-btn" id="resetBtn">Reset this task</button>
+      <button class="link-btn danger" id="deleteBtn">Delete task</button>
+    </div>
+  `;
+
+  document.getElementById('taskSelect').onchange = (e) => {
+    activeTaskId = e.target.value;
+    saveActive();
+    render();
+  };
+  document.getElementById('newTaskBtn').onclick = openNewTaskModal;
+  document.getElementById('pdfBtn').onclick = () => printReport(task, false);
+  document.getElementById('formalPdfBtn').onclick = () => printReport(task, true);
+  document.getElementById('search').oninput = (e) => { searchTerm = e.target.value; render(); preserveFocus('search'); };
+  document.getElementById('pendingToggle').onchange = (e) => { showPendingOnly = e.target.checked; render(); };
+  document.getElementById('resetBtn').onclick = () => confirmAction(
+    'Reset this task?', `Every checkbox in "${task.name}" will be cleared.`,
+    () => { task.entries = {}; saveTasks(); render(); showToast('Task reset'); }
+  );
+  document.getElementById('deleteBtn').onclick = () => confirmAction(
+    'Delete this task?', `"${task.name}" and all its progress will be removed for good.`,
+    () => {
+      tasks = tasks.filter(t => t.id !== task.id);
+      activeTaskId = tasks.length ? tasks[0].id : null;
+      saveTasks(); saveActive(); render(); showToast('Task deleted');
+    }
+  );
+
+  list.forEach(s => {
+    const rowEl = document.getElementById('row-' + cssSafe(s.admno));
+    if(!rowEl) return;
+    rowEl.querySelector('.led').onclick = () => toggleDone(task, s.admno);
+    rowEl.querySelector('.row-info').onclick = () => toggleDone(task, s.admno);
+    const amtInput = rowEl.querySelector('.amount-input');
+    if(amtInput){
+      amtInput.oninput = (e) => {
+        if(!task.entries[s.admno]) task.entries[s.admno] = {done:false};
+        task.entries[s.admno].amount = e.target.value;
+        saveTasks();
+        refreshTotalOnly(task);
+      };
+    }
+  });
+
+  document.getElementById('manageBtn').onclick = openRosterModal;
+}
+
+function refreshTotalOnly(task){
+  const totalCollected = ROSTER.reduce((sum, s) => {
+    const e = task.entries[s.admno];
+    const amt = e?.done ? parseFloat(e.amount) : NaN;
+    return sum + (isNaN(amt) ? 0 : amt);
+  }, 0);
+  const el = document.querySelector('.stat.total');
+  if(el) el.textContent = `₹${totalCollected.toLocaleString('en-IN')} collected`;
+}
+
+function cssSafe(str){ return str.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+function rowHtml(s, task){
+  const entry = task.entries[s.admno];
+  const done = !!entry?.done;
+  const amt = entry?.amount ?? '';
+  return `
+    <div class="row ${done?'is-done':''}" id="row-${cssSafe(s.admno)}">
+      <div class="led"></div>
+      <div class="row-info">
+        <div class="row-name">${escapeHtml(s.name)}</div>
+        <div class="row-admno">${s.admno}</div>
+      </div>
+      ${task.trackAmount ? `<input type="text" inputmode="decimal" class="amount-input" placeholder="Rs" value="${escapeAttr(amt)}" ${done?'':'disabled'}>` : ''}
+    </div>`;
+}
+
+function toggleDone(task, admno){
+  if(!task.entries[admno]) task.entries[admno] = {done:false};
+  task.entries[admno].done = !task.entries[admno].done;
+  if(task.entries[admno].done && task.trackAmount && !task.entries[admno].amount && task.defaultAmount){
+    task.entries[admno].amount = task.defaultAmount;
+  }
+  saveTasks();
+  render();
+}
+
+function preserveFocus(id){
+  const el = document.getElementById(id);
+  if(el){ el.focus(); const v = el.value; el.value=''; el.value=v; }
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+function openNewTaskModal(){
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3>New task</h3>
+      <label for="taskName">What's this for?</label>
+      <input type="text" id="taskName" placeholder="e.g. Fee collection - Sept" autofocus>
+      <div class="checkbox-row">
+        <input type="checkbox" id="trackAmount">
+        <label for="trackAmount" style="margin:0;">Track an amount per student</label>
+      </div>
+      <div id="defaultAmountWrap" style="display:none;">
+        <label for="defaultAmount">Default amount (optional)</label>
+        <input type="number" id="defaultAmount" placeholder="e.g. 200">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel">Cancel</button>
+        <button class="btn-confirm">Create</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  backdrop.querySelector('#trackAmount').onchange = (e) => {
+    backdrop.querySelector('#defaultAmountWrap').style.di
